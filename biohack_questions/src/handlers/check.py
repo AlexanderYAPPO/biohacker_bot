@@ -10,42 +10,43 @@ from biohack_questions.src import mongoclient
 logger = logging.getLogger(__name__)
 
 
-AVG_HEART_RATE = 'AVG_HEART_RATE'
-OXYGENATION = 'OXYGENATION'
-STEPS = 'STEPS'
-HOURS_OF_SLEEP = 'HOURS_OF_SLEEP'
-FATIGUE = 'FATIGUE'
-CONCENTRATION = 'CONCENTRATION'
+HEART_RATE_ASKED = 'HEART_RATE_ASKED'
+OXYGENATION_ASKED = 'OXYGENATION_ASKED'
+BED_TIME = 'BED_TIME'
+STEPS_ASKED = 'STEPS_ASKED'
+SLEEP_DURATION_ASKED = 'SLEEP_DURATION_ASKED'
+FATIGUE_ASKED = 'FATIGUE_ASKED'
+CONCENTRATION_ASKED = 'CONCENTRATION_ASKED'
 DONE = 'DONE'
 
 
-def start(update, context):
-    update.message.reply_text('Type your average heart rate')
-    return AVG_HEART_RATE
+def start_and_ask_heart_rate(update, context):
+    update.message.reply_text('Укажите показания сердечного ритма')
+    return HEART_RATE_ASKED
 
 
-def provide_avg_heart_rate(update, context):
+def get_heart_rate_and_ask_oxygenation(update, context):
     value = update.message.text
     context.user_data['heart_rate'] = value
-    update.message.reply_text('Type your oxygenation')
-    return OXYGENATION
+    update.message.reply_text('Укажите количество пройденных шагов за день')
+    return OXYGENATION_ASKED
 
 
-def provide_oxygenation(update, context):
+def get_oxygenation_and_ask_steps(update, context):
     value = update.message.text
     context.user_data['oxygenation'] = value
-    update.message.reply_text('How many steps did you make')
-    return STEPS
+    update.message.reply_text('Напишите сколько часов вы сегодня спали?')
+    return STEPS_ASKED
 
 
-def provide_steps(update, context):
+def get_steps_and_ask_sleep_duration(update, context):
     value = update.message.text
     context.user_data['steps'] = value
     update.message.reply_text('Type how many hours of sleep you had')
-    return HOURS_OF_SLEEP
+    return SLEEP_DURATION_ASKED
 
 
-def provide_hours_of_sleep(update, context):
+def get_sleep_duration_and_ask_fatigue(update, context):
     value = update.message.text
     context.user_data['hours_of_sleep'] = value
 
@@ -54,10 +55,10 @@ def provide_hours_of_sleep(update, context):
         'Are you fatigue?',
         reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
 
-    return FATIGUE
+    return FATIGUE_ASKED
 
 
-def provide_fatigue(update, context):
+def get_fatigue_and_ask_concentration(update, context):
     value = update.message.text
     context.user_data['fatigue'] = value
 
@@ -66,10 +67,10 @@ def provide_fatigue(update, context):
         'How is your concentration?',
         reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
 
-    return CONCENTRATION
+    return CONCENTRATION_ASKED
 
 
-def provide_concentration(update, context):
+def get_concentration_and_summarize(update, context):
     value = update.message.text
     context.user_data['concentration'] = value
     update.message.reply_text('This is what we have now %s. Type /check to re-fill the data or /done to finish' % context.user_data)
@@ -103,18 +104,18 @@ def cancel(update, context):
 
 def generate_handler():
     return ConversationHandler(
-        entry_points=[CommandHandler('check', start)],
+        entry_points=[CommandHandler('check', start_and_ask_heart_rate)],
         states={
-            AVG_HEART_RATE: [MessageHandler(Filters.text, provide_avg_heart_rate)],
-            OXYGENATION: [MessageHandler(Filters.text, provide_oxygenation)],
-            STEPS: [MessageHandler(Filters.text, provide_steps)],
-            HOURS_OF_SLEEP: [MessageHandler(Filters.text, provide_hours_of_sleep)],
+            HEART_RATE_ASKED: [MessageHandler(Filters.text, get_heart_rate_and_ask_oxygenation)],
+            OXYGENATION_ASKED: [MessageHandler(Filters.text, get_oxygenation_and_ask_steps)],
+            STEPS_ASKED: [MessageHandler(Filters.text, get_steps_and_ask_sleep_duration)],
+            SLEEP_DURATION_ASKED: [MessageHandler(Filters.text, get_sleep_duration_and_ask_fatigue)],
 
-            FATIGUE: [MessageHandler(Filters.regex('^(yes|no)$'), provide_fatigue)],
-            CONCENTRATION: [MessageHandler(Filters.regex('^(high|mild|weak|none)$'), provide_concentration)],
+            FATIGUE_ASKED: [MessageHandler(Filters.regex('^(yes|no)$'), get_fatigue_and_ask_concentration)],
+            CONCENTRATION_ASKED: [MessageHandler(Filters.regex('^(high|mild|weak|none)$'), get_concentration_and_summarize)],
 
             DONE: [
-                CommandHandler('check', start),
+                CommandHandler('check', start_and_ask_heart_rate),
                 CommandHandler('done', done_start_info),
             ],
         },
