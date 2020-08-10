@@ -2,11 +2,11 @@ import datetime
 import logging
 
 from telegram import (ReplyKeyboardMarkup, ReplyKeyboardRemove)
-from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
+from telegram.ext import (CommandHandler, MessageHandler, Filters,
                           ConversationHandler)
 
-import mongoclient
-from handlers.reminder import set_reminder
+from biohack_questions.src import mongoclient
+from biohack_questions.src.handlers.reminder import set_reminder
 
 logger = logging.getLogger(__name__)
 

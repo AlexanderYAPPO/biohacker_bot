@@ -2,10 +2,10 @@ import datetime
 import logging
 
 from telegram import (ReplyKeyboardMarkup, ReplyKeyboardRemove)
-from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
+from telegram.ext import (CommandHandler, MessageHandler, Filters,
                           ConversationHandler)
 
-import mongoclient
+from biohack_questions.src import mongoclient
 
 logger = logging.getLogger(__name__)
 

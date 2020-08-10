@@ -2,7 +2,7 @@ import argparse
 import datetime
 import json
 
-from mongoclient import get_logs_collection
+from biohack_questions.src.mongoclient import get_logs_collection
 
 
 if __name__ == '__main__':

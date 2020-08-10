@@ -6,8 +6,8 @@ import logging
 
 from telegram.ext import Updater
 
-from handlers import initial, reminder
-from handlers import check
+from biohack_questions.src.handlers import initial, reminder
+from biohack_questions.src.handlers import check
 
 TOKEN = ''
 
