@@ -1,11 +1,13 @@
 import datetime
 import logging
+from pathlib import Path
 
 from telegram import (ReplyKeyboardMarkup, ReplyKeyboardRemove)
 from telegram.ext import (CommandHandler, MessageHandler, Filters,
                           ConversationHandler)
 
 from biohack_questions.src import mongoclient
+from biohack_questions.src.constants import FILE_DOWNLOAD_PATH
 
 DONE = 'DONE'
 COMMENTS_ASKED = 'COMMENTS_ASKED'
@@ -24,21 +26,34 @@ HEART_RATE_ASKED = 'HEART_RATE_ASKED'
 logger = logging.getLogger(__name__)
 
 
+def generate_download_photo_path(update, metric_name):
+    file_name = '_'.join([metric_name, update.message.from_user.username, str(datetime.datetime.now())]) + '.jpg'
+    return str(FILE_DOWNLOAD_PATH / Path(file_name))
+
+
+def download_file(bot, update, metric_name):
+    file_id = update.message.photo[-1].file_id
+    new_file = bot.getFile(file_id)
+    file_name = generate_download_photo_path(update, metric_name)
+    new_file.download(file_name)
+    return file_name
+
+
 def start_and_ask_heart_rate(update, context):
-    update.message.reply_text('Укажите показания сердечного ритма')
+    update.message.reply_text('Загрузите скриншот с показаниями сердечного ритма')
     return HEART_RATE_ASKED
 
 
 def get_heart_rate_and_ask_steps(update, context):
-    value = update.message.text
-    context.user_data['heart_rate'] = value
-    update.message.reply_text('Укажите количество пройденных шагов за день')
+    file_name = download_file(context.bot, update, 'heart_rate')
+    context.user_data['heart_rate'] = file_name
+    update.message.reply_text('Загрузите скриншот с количеством пройденных шагов за день')
     return STEPS_ASKED
 
 
 def get_steps_and_ask_sleep_duration(update, context):
-    value = update.message.text
-    context.user_data['steps'] = value
+    file_name = download_file(context.bot, update, 'steps')
+    context.user_data['steps'] = file_name
     update.message.reply_text('Напишите сколько часов вы сегодня спали?')
     return SLEEP_DURATION_ASKED
 
@@ -48,7 +63,7 @@ def get_sleep_duration_and_ask_bed_time(update, context):
     context.user_data['hours_of_sleep'] = value
 
     reply_keyboard = [['Да', 'Нет']]
-    update.message.reply_text('Вы легли спать до 12? варианты ответов', reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+    update.message.reply_text('Вы легли спать до 12?', reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
     return BED_TIME_ASKED
 
 
@@ -64,19 +79,14 @@ def get_bed_time_and_ask_fatigue(update, context):
 def get_fatigue_ask_reaction_test(update, context):
     value = update.message.text
     context.user_data['fatigue'] = value
-    update.message.reply_text('Проверьте свою скорость реакции. Пройдите тест по ссылке https://www.justpark.com/creative/reaction-time-test/ и укажите '
-                              'результат в милисекундах')
+    update.message.reply_text('Проверьте свою скорость реакции. Пройдите тест по ссылке https://www.justpark.com/creative/reaction-time-test/ и загрузите '
+                              'скриншот с результатами')
     return REACTION_TEST_ASKED
 
 
 def get_reaction_test_and_ask_activity_duration(update, context):
-    value = update.message.text
-    try:
-        value = int(value)
-    except ValueError:
-        pass
-
-    context.user_data['reaction'] = value
+    file_name = download_file(context.bot, update, 'reaction')
+    context.user_data['reaction'] = file_name
     reply_keyboard = [['до 30 мин', '30-60 минут', '60-90 минут', 'более 90 минут']]
     update.message.reply_text('сколько вы сегодня занимались физической активностью?', reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
     return ACTIVITY_DURATION_ASKED
@@ -164,12 +174,12 @@ def generate_handler():
     return ConversationHandler(
         entry_points=[CommandHandler('check', start_and_ask_heart_rate)],
         states={
-            HEART_RATE_ASKED: [MessageHandler(Filters.text, get_heart_rate_and_ask_steps)],
-            STEPS_ASKED: [MessageHandler(Filters.text, get_steps_and_ask_sleep_duration)],
+            HEART_RATE_ASKED: [MessageHandler(Filters.photo, get_heart_rate_and_ask_steps)],
+            STEPS_ASKED: [MessageHandler(Filters.photo, get_steps_and_ask_sleep_duration)],
             SLEEP_DURATION_ASKED: [MessageHandler(Filters.text, get_sleep_duration_and_ask_bed_time)],
             BED_TIME_ASKED: [MessageHandler(Filters.regex('^(Да|Нет)$'), get_bed_time_and_ask_fatigue)],
             FATIGUE_ASKED: [MessageHandler(Filters.regex('^(Да|Нет)$'), get_fatigue_ask_reaction_test)],
-            REACTION_TEST_ASKED: [MessageHandler(Filters.text, get_reaction_test_and_ask_activity_duration)],
+            REACTION_TEST_ASKED: [MessageHandler(Filters.photo, get_reaction_test_and_ask_activity_duration)],
             ACTIVITY_DURATION_ASKED: [
                 MessageHandler(Filters.regex('^(до 30 мин|30-60 минут|60-90 минут|более 90 минут)$'), get_activity_duration_and_ask_activity_level)],
             ACTIVITY_LEVEL_ASKED: [MessageHandler(Filters.regex('^(высокая|средняя|лёгкая)$'), get_activity_level_and_ask_breakfast_time)],

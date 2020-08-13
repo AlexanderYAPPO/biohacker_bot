@@ -3,9 +3,11 @@
 # This program is dedicated to the public domain under the CC0 license.
 
 import logging
+from pathlib import Path
 
 from telegram.ext import Updater
 
+from biohack_questions.src.constants import FILE_DOWNLOAD_PATH
 from biohack_questions.src.handlers import initial, reminder
 from biohack_questions.src.handlers import check
 
@@ -25,6 +27,10 @@ def main():
     # Make sure to set use_context=True to use the new context based callbacks
     # Post version 12 this will no longer be necessary
     updater = Updater(TOKEN, use_context=True)
+
+    download_path = Path(FILE_DOWNLOAD_PATH)
+    if not download_path.exists():
+        download_path.mkdir()
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
