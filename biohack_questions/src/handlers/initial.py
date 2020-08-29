@@ -20,10 +20,7 @@ CONVERSATION_TIMEOUT = 3600
 
 
 def start(update, context):
-    # reply_keyboard = [['Boy', 'Girl', 'Other']]
-
-    update.message.reply_text('Tell me your name')
-
+    update.message.reply_text('Здравствуйте! Это бот помощник которому вы будете отправлять ежедневные данные о своей активности. Напишите, как вас зовут.')
     return PROVIDE_NAME
 
 
@@ -33,8 +30,7 @@ def provide_name(update, context):
 
     context.user_data['name'] = user_name
 
-    update.message.reply_text('User %s responded with a name %s. Now tell me your date of birth in the following format: "YYYY-MM-DD".'
-                              % (user.username, user_name))
+    update.message.reply_text('Напишите свою дату рождения в формате "YYYY-MM-DD".')
 
     return PROVIDE_DOB
 
@@ -45,22 +41,30 @@ def provide_dob(update, context):
     try:
         context.user_data['date_of_birth'] = datetime.datetime.strptime(user_dob, '%Y-%m-%d')
     except ValueError:
-        update.message.reply_text('You used an incorrect format. For example, 12 May 1990 will be 1990-05-12. Try again.')
+        update.message.reply_text('Вы ввели дату в неверном формате. Например, если дата рождения 12 Мая 1990 то введите 1990-05-12. Попробуйте снова.')
         return PROVIDE_DOB
 
-    reply_keyboard = [['fitness', 'diet', 'mindfulness', 'control']]
+    reply_keyboard = [['Спорт', 'Диета', 'Медитация']]
 
     update.message.reply_text(
-        'Your date of birth is %s. Now select the program you\'re enrolled to',
+        'Напишите, какую активность вам выбрали во время исследования.',
         reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
 
     return SELECT_PROGRAM
 
 
 def select_program(update, context):
-    context.user_data['program'] = update.message.text
 
-    update.message.reply_text('This is what we have now %s. Type /start to re-fill the data or /done to finish' % context.user_data)
+    program_remapping = {
+        'Спорт': 'sport',
+        'Диета': 'diet',
+        'Медитация': 'meditation',
+    }
+    program = program_remapping.get(update.message.text, 'unknown')
+
+    context.user_data['program'] = program
+
+    update.message.reply_text('Анкета заполнена. Если все заполнено верно - введите /done. Если хотите перезаполнить - введите /start')
 
     return DONE
 
@@ -74,6 +78,11 @@ def done_start_info(update, context):
     }
     mongoclient.add_user_info(user_dict)
 
+    update.message.reply_text('Мы запомнили ваши данные. Мы просим заполнять опросник об активности каждый день. Для этого вам нужно будет вводить команду '
+                              '/check которая запускает опросник. Ваши ежедневные показания очень важны для исследования. Постарайтесь не пропускать дни '
+                              'заполнения. По умолчанию мы будем напоминать вам об опроснике каждый день в это время. Если вам не хочется получать '
+                              'напоминания, введите /unset_reminder. Если же вы передумали и наоборот хотите снова начать получать уведомления, '
+                              'введите /set_reminder')
     set_reminder(update, context)
     
     return ConversationHandler.END
@@ -82,7 +91,7 @@ def done_start_info(update, context):
 def cancel(update, context):
     user = update.message.from_user
     logger.info("User %s canceled the conversation.", user.first_name)
-    update.message.reply_text('Bye! I hope we can talk again some day.',
+    update.message.reply_text('Диалог отменен. Введите /start чтобы заполнить стартовую анкету или /check чтобы сообщить результаты сегодняшних показаний.',
                               reply_markup=ReplyKeyboardRemove())
 
     return ConversationHandler.END
@@ -99,7 +108,7 @@ def generate_handler():
         states={
             PROVIDE_NAME: [MessageHandler(Filters.text, provide_name)],
             PROVIDE_DOB: [MessageHandler(Filters.text, provide_dob)],
-            SELECT_PROGRAM: [MessageHandler(Filters.regex('^(fitness|control|mindfulness|diet)$'), select_program)],
+            SELECT_PROGRAM: [MessageHandler(Filters.regex('^(Спорт|Диета|Медитация])$'), select_program)],
             DONE: [
                 CommandHandler('start', start),
                 CommandHandler('done', done_start_info),

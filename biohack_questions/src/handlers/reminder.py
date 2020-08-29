@@ -9,10 +9,14 @@ def ping_user(context):
 def set_reminder(update, context):
     new_job = context.job_queue.run_repeating(ping_user, 3600 * 24, context=update.message.chat_id)
     context.chat_data['job'] = new_job
+
+
+def set_reminder_command(update, context):
+    set_reminder(update, context)
     update.message.reply_text('All set, we will be asking you to provide some information every day. Type /unset_reminder to stop the reminder')
 
 
-def unset_reminder(update, context):
+def unset_reminder_command(update, context):
     if 'job' not in context.chat_data:
         update.message.reply_text('The reminder is already stopped')
         return
@@ -25,8 +29,8 @@ def unset_reminder(update, context):
 
 
 def generate_set_handler():
-    return CommandHandler('set_reminder', set_reminder)
+    return CommandHandler('set_reminder', set_reminder_command)
 
 
 def generate_unset_handler():
-    return CommandHandler('unset_reminder', unset_reminder)
+    return CommandHandler('unset_reminder', unset_reminder_command)

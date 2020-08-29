@@ -10,6 +10,8 @@ from biohack_questions.src import mongoclient
 from biohack_questions.src.constants import FILE_DOWNLOAD_PATH
 
 DONE = 'DONE'
+SATISFACTION_ASKED = 'SATISFACTION_ASKED'
+EFFICIENCY_ASKED = 'EFFICIENCY_ASKED'
 COMMENTS_ASKED = 'COMMENTS_ASKED'
 MEETINGS_ASKED = 'MEETINGS_ASKED'
 DINNER_TIME_ASKED = 'DINNER_TIME_ASKED'
@@ -24,7 +26,6 @@ STEPS_ASKED = 'STEPS_ASKED'
 HEART_RATE_ASKED = 'HEART_RATE_ASKED'
 
 CONVERSATION_TIMEOUT = 3600
-
 
 logger = logging.getLogger(__name__)
 
@@ -43,14 +44,14 @@ def download_file(bot, update, metric_name):
 
 
 def start_and_ask_heart_rate(update, context):
-    update.message.reply_text('Загрузите скриншот с показаниями сердечного ритма')
+    update.message.reply_text('Загрузите скриншот с показаниями сердечного ритма с вашего фитнесс трекера')
     return HEART_RATE_ASKED
 
 
 def get_heart_rate_and_ask_steps(update, context):
     file_name = download_file(context.bot, update, 'heart_rate')
     context.user_data['heart_rate'] = file_name
-    update.message.reply_text('Загрузите скриншот с количеством пройденных шагов за день')
+    update.message.reply_text('Загрузите скриншот с количеством пройденных шагов за день с вашего фитнесс трекера')
     return STEPS_ASKED
 
 
@@ -82,7 +83,7 @@ def get_bed_time_and_ask_fatigue(update, context):
 def get_fatigue_ask_reaction_test(update, context):
     value = update.message.text
     context.user_data['fatigue'] = value
-    update.message.reply_text('Проверьте свою скорость реакции. Пройдите тест по ссылке https://www.justpark.com/creative/reaction-time-test/ и загрузите '
+    update.message.reply_text('Проверьте свою скорость реакции. Пройдите тест по ссылке https://humanbenchmark.com/tests/reactiontime и загрузите '
                               'скриншот с результатами')
     return REACTION_TEST_ASKED
 
@@ -127,17 +128,39 @@ def get_dinner_time_and_ask_meetings(update, context):
     return MEETINGS_ASKED
 
 
-def get_meetings_and_ask_comments(update, context):
+def get_meetings_and_ask_efficiency(update, context):
     value = update.message.text
     context.user_data['meetings'] = value
-    update.message.reply_text('поделитесь общим комментарием к сегодняшнему дню, было ли что то необычное , чувствовали ли вы себя лучше или хуже ?')
+
+    reply_keyboard = [['Да', 'Нет']]
+    update.message.reply_text('Выполнили ли вы все запланированные на сегодня задачи.',
+                              reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+    return EFFICIENCY_ASKED
+
+
+def get_efficiency_and_ask_satisfaction(update, context):
+    value = update.message.text
+    context.user_data['efficiency'] = value
+
+    reply_keyboard = [['Да', 'Нет']]
+    update.message.reply_text('Довольны ли вы своей эффективностью сегодня.',
+                              reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+    return SATISFACTION_ASKED
+
+
+def get_satisfaction_and_ask_comments(update, context):
+    value = update.message.text
+    context.user_data['satisfaction'] = value
+
+    update.message.reply_text('поделитесь общим комментарием к сегодняшнему дню, было ли что то необычное, чувствовали ли вы себя лучше или хуже? (высокая '
+                              'температура, очень интенсивная спортивная нагрузка, долгие перелет, стрессовое событие).')
     return COMMENTS_ASKED
 
 
 def get_comments_and_summarize(update, context):
     value = update.message.text
     context.user_data['comments'] = value
-    update.message.reply_text('Вот что вы сообщили: %s. Нажмите /check чтобы перезаполнить и /done чтобы завершить опрос' % context.user_data)
+    update.message.reply_text('Введите /check чтобы перезаполнить или /done чтобы завершить опрос')
     return DONE
 
 
@@ -167,7 +190,7 @@ def done_start_info(update, context):
 def cancel(update, context):
     user = update.message.from_user
     logger.info("User %s canceled the conversation.", user.first_name)
-    update.message.reply_text('Bye! I hope we can talk again some day.',
+    update.message.reply_text('Диалог отменен. Введите /start чтобы заполнить стартовую анкету или /check чтобы сообщить результаты сегодняшних показаний.',
                               reply_markup=ReplyKeyboardRemove())
 
     return ConversationHandler.END
@@ -194,9 +217,10 @@ def generate_handler():
             BREAKFAST_TIME_ASKED: [MessageHandler(Filters.text, get_breakfast_time_and_ask_dinner_time)],
             DINNER_TIME_ASKED: [MessageHandler(Filters.text, get_dinner_time_and_ask_meetings)],
             MEETINGS_ASKED: [
-                MessageHandler(Filters.regex('^(да, меньше 1 часа|да, более 1 часа|нет)$'), get_meetings_and_ask_comments)],
+                MessageHandler(Filters.regex('^(да, меньше 1 часа|да, более 1 часа|нет)$'), get_meetings_and_ask_efficiency)],
+            EFFICIENCY_ASKED: [MessageHandler(Filters.regex('^(Да|Нет)$'), get_efficiency_and_ask_satisfaction)],
+            SATISFACTION_ASKED: [MessageHandler(Filters.regex('^(Да|Нет)$'), get_satisfaction_and_ask_comments)],
             COMMENTS_ASKED: [MessageHandler(Filters.text, get_comments_and_summarize)],
-
             DONE: [
                 CommandHandler('check', start_and_ask_heart_rate),
                 CommandHandler('done', done_start_info),
