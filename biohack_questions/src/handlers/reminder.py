@@ -3,7 +3,7 @@ from telegram.ext import CommandHandler
 
 def ping_user(context):
     job = context.job
-    context.bot.send_message(job.context, text='A daily reminder to send your data. Type /check')
+    context.bot.send_message(job.context, text='Привет, это ежедневное напоминание об опроснике. Введите /check чтобы начать заполнение.')
 
 
 def set_reminder(update, context):
@@ -13,19 +13,21 @@ def set_reminder(update, context):
 
 def set_reminder_command(update, context):
     set_reminder(update, context)
-    update.message.reply_text('All set, we will be asking you to provide some information every day. Type /unset_reminder to stop the reminder')
+    update.message.reply_text('Напоминание установлено. Мы напишем вам через 24 часа. Введите /unset_reminder если вы не хотите больше получать напоминания')
 
 
 def unset_reminder_command(update, context):
+    msg = 'Напоминания отключены. Не забудьте заполнить данные самостоятельно. Если вы хотите снова начать получать напоминания - введите /set_reminder'
+
     if 'job' not in context.chat_data:
-        update.message.reply_text('The reminder is already stopped')
+        update.message.reply_text(msg)
         return
 
     job = context.chat_data['job']
     job.schedule_removal()
     del context.chat_data['job']
 
-    update.message.reply_text('The reminder has been stopped')
+    update.message.reply_text(msg)
 
 
 def generate_set_handler():
