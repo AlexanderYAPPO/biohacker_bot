@@ -23,6 +23,9 @@ SLEEP_DURATION_ASKED = 'SLEEP_DURATION_ASKED'
 STEPS_ASKED = 'STEPS_ASKED'
 HEART_RATE_ASKED = 'HEART_RATE_ASKED'
 
+CONVERSATION_TIMEOUT = 3600
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -170,6 +173,11 @@ def cancel(update, context):
     return ConversationHandler.END
 
 
+def timeout(update, context):
+    update.message.reply_text("Ответ не был получен за отведенное время. Наберите /check для повторной попытки")
+    return ConversationHandler.END
+
+
 def generate_handler():
     return ConversationHandler(
         entry_points=[CommandHandler('check', start_and_ask_heart_rate)],
@@ -193,6 +201,8 @@ def generate_handler():
                 CommandHandler('check', start_and_ask_heart_rate),
                 CommandHandler('done', done_start_info),
             ],
+            ConversationHandler.TIMEOUT: [MessageHandler(Filters.all, timeout)]
         },
-        fallbacks=[CommandHandler('cancel', cancel)]
+        fallbacks=[CommandHandler('cancel', cancel)],
+        conversation_timeout=CONVERSATION_TIMEOUT,
     )

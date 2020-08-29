@@ -16,6 +16,8 @@ PROVIDE_DOB = 'PROVIDE_DOB'
 SELECT_PROGRAM = 'SELECT_PROGRAM'
 DONE = 'DONE'
 
+CONVERSATION_TIMEOUT = 3600
+
 
 def start(update, context):
     # reply_keyboard = [['Boy', 'Girl', 'Other']]
@@ -86,6 +88,11 @@ def cancel(update, context):
     return ConversationHandler.END
 
 
+def timeout(update, context):
+    update.message.reply_text("Ответ не был получен за отведенное время. Наберите /start для повторной попытки")
+    return ConversationHandler.END
+
+
 def generate_handler():
     return ConversationHandler(
         entry_points=[CommandHandler('start', start)],
@@ -97,6 +104,8 @@ def generate_handler():
                 CommandHandler('start', start),
                 CommandHandler('done', done_start_info),
             ],
+            ConversationHandler.TIMEOUT: [MessageHandler(Filters.all, timeout)]
         },
-        fallbacks=[CommandHandler('cancel', cancel)]
+        fallbacks=[CommandHandler('cancel', cancel)],
+        conversation_timeout=CONVERSATION_TIMEOUT,
     )
