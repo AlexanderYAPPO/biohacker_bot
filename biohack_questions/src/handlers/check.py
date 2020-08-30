@@ -22,6 +22,7 @@ REACTION_TEST_ASKED = 'REACTION_TEST_ASKED'
 FATIGUE_ASKED = 'FATIGUE_ASKED'
 BED_TIME_ASKED = 'BED_TIME_ASKED'
 SLEEP_DURATION_ASKED = 'SLEEP_DURATION_ASKED'
+HRV_ASKED = 'HRV_ASKED'
 STEPS_ASKED = 'STEPS_ASKED'
 HEART_RATE_ASKED = 'HEART_RATE_ASKED'
 
@@ -44,7 +45,7 @@ def download_file(bot, update, metric_name):
 
 
 def start_and_ask_heart_rate(update, context):
-    update.message.reply_text('Загрузите скриншот с показаниями сердечного ритма с вашего фитнесс трекера')
+    update.message.reply_text('Загрузите скриншот с показаниями сердечного ритма с вашего фитнесс трекера. Замеряйте в положении стоя в состоянии покоя.')
     return HEART_RATE_ASKED
 
 
@@ -55,9 +56,16 @@ def get_heart_rate_and_ask_steps(update, context):
     return STEPS_ASKED
 
 
-def get_steps_and_ask_sleep_duration(update, context):
+def get_steps_and_ask_hrv(update, context):
     file_name = download_file(context.bot, update, 'steps')
     context.user_data['steps'] = file_name
+    update.message.reply_text('Загрузите скриншот с показаниями HRV.')
+    return HRV_ASKED
+
+
+def get_hrv_and_ask_sleep_duration(update, context):
+    file_name = download_file(context.bot, update, 'hrv')
+    context.user_data['hrv'] = file_name
     update.message.reply_text('Напишите сколько часов вы сегодня спали?')
     return SLEEP_DURATION_ASKED
 
@@ -206,7 +214,8 @@ def generate_handler():
         entry_points=[CommandHandler('check', start_and_ask_heart_rate)],
         states={
             HEART_RATE_ASKED: [MessageHandler(Filters.photo, get_heart_rate_and_ask_steps)],
-            STEPS_ASKED: [MessageHandler(Filters.photo, get_steps_and_ask_sleep_duration)],
+            STEPS_ASKED: [MessageHandler(Filters.photo, get_steps_and_ask_hrv)],
+            HRV_ASKED: [MessageHandler(Filters.photo, get_hrv_and_ask_sleep_duration)],
             SLEEP_DURATION_ASKED: [MessageHandler(Filters.text, get_sleep_duration_and_ask_bed_time)],
             BED_TIME_ASKED: [MessageHandler(Filters.regex('^(Да|Нет)$'), get_bed_time_and_ask_fatigue)],
             FATIGUE_ASKED: [MessageHandler(Filters.regex('^(Да|Нет)$'), get_fatigue_ask_reaction_test)],
