@@ -108,7 +108,7 @@ def generate_handler():
         states={
             PROVIDE_NAME: [MessageHandler(Filters.text, provide_name)],
             PROVIDE_DOB: [MessageHandler(Filters.text, provide_dob)],
-            SELECT_PROGRAM: [MessageHandler(Filters.regex('^(Спорт|Диета|Медитация])$'), select_program)],
+            SELECT_PROGRAM: [MessageHandler(Filters.regex('^(Спорт|Диета|Медитация)$'), select_program)],
             DONE: [
                 CommandHandler('start', start),
                 CommandHandler('done', done_start_info),
