@@ -25,3 +25,11 @@ def add_log_record(log_dict):
     coll = get_logs_collection()
     logger.info('adding %s' % log_dict)
     coll.insert_one(log_dict)
+
+
+def get_program_by_user(username):
+    coll = get_user_collection()
+    user = coll.find_one({'username': username})
+    if user is None:
+        return None
+    return user.get('program')
