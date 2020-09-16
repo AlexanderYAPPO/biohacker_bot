@@ -7,6 +7,10 @@ def ping_user(context):
 
 
 def set_reminder(update, context):
+    job = context.chat_data.get('job')
+    if job is not None:
+        job.schedule_removal()
+
     new_job = context.job_queue.run_repeating(ping_user, 3600 * 24, context=update.message.chat_id)
     context.chat_data['job'] = new_job
 
