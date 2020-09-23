@@ -215,30 +215,34 @@ def get_hrv_after_meditation_and_summarize(update, context):
 
 
 def done_start_info(update, context):
-    log_record_dict = {
-        'username': update.message.from_user.username,
-        'date': datetime.datetime.now(),
+    try:
+        log_record_dict = {
+            'username': update.message.from_user.username,
+            'date': datetime.datetime.now(),
 
-        'heart_rate': context.user_data['heart_rate'],
-        'steps': context.user_data['steps'],
-        'hours_of_sleep': context.user_data['hours_of_sleep'],
-        'bed_time_before_12': context.user_data['bed_time_before_12'],
-        'fatigue': context.user_data['fatigue'],
-        'reaction': context.user_data['reaction'],
-        'activity_duration': context.user_data['activity_duration'],
-        'breakfast_time': context.user_data['breakfast_time'],
-        'dinner_time': context.user_data['dinner_time'],
-        'meetings': context.user_data['meetings'],
-        'comments': context.user_data['comments'],
+            'heart_rate': context.user_data['heart_rate'],
+            'steps': context.user_data['steps'],
+            'hours_of_sleep': context.user_data['hours_of_sleep'],
+            'bed_time_before_12': context.user_data['bed_time_before_12'],
+            'fatigue': context.user_data['fatigue'],
+            'reaction': context.user_data['reaction'],
+            'activity_duration': context.user_data['activity_duration'],
+            'breakfast_time': context.user_data['breakfast_time'],
+            'dinner_time': context.user_data['dinner_time'],
+            'meetings': context.user_data['meetings'],
+            'comments': context.user_data['comments'],
 
-        'activity_level': context.get('activity_level'),
+            'activity_level': context.user_data.get('activity_level'),
 
-        'pulse': context.get('pulse'),
+            'pulse': context.user_data.get('pulse'),
 
-        'hrv_before_meditation': context.get('hrv_before_meditation'),
-        'hrv_after_meditation': context.get('hrv_after_meditation'),
-    }
-    mongoclient.add_log_record(log_record_dict)
+            'hrv_before_meditation': context.user_data.get('hrv_before_meditation'),
+            'hrv_after_meditation': context.user_data.get('hrv_after_meditation'),
+        }
+        mongoclient.add_log_record(log_record_dict)
+    except Exception:
+        update.message.reply_text('Не получилось сохранить данные, свяжитесь с нами.')
+        return ConversationHandler.END
     update.message.reply_text('Опрос окончен, спасибо.')
     return ConversationHandler.END
 
